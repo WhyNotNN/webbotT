@@ -1,0 +1,12 @@
+name = "llm-telegram-webapp"
+main = "dist/index.js"
+compatibility_date = "2025-08-26"
+
+# D1 binding (create in Cloudflare dashboard or with wrangler d1)
+[[d1_databases]]
+binding = "DB"
+database_name = "messages"
+database_id = ""
+
+[env.production]
+# Put production-specific settings here if needed
