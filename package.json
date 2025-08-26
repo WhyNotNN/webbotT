@@ -1,0 +1,15 @@
+{
+  "name": "llm-telegram-webapp",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "esbuild src/index.ts --bundle --platform=browser --target=es2020 --outfile=dist/index.js --external:kv-asset-handler",
+    "dev": "wrangler dev",
+    "deploy": "wrangler publish"
+  },
+  "devDependencies": {
+    "esbuild": "^0.18.20",
+    "wrangler": "^3.12.0"
+  },
+  "dependencies": {}
+}
