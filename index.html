@@ -1,0 +1,103 @@
+
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LLM WebApp (Cloudflare)</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { margin: 0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial; background: #f3f4f6; }
+    .container { padding: 12px; max-width: 900px; margin: 0 auto; }
+    .bubble { border-radius: 14px; padding: 10px 12px; margin: 8px 0; white-space: pre-wrap; }
+    .user { background: #d2e4ff; text-align: right; }
+    .bot { background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,0.04); }
+    .row { display: flex; gap: 8px; }
+    textarea { flex: 1; min-height: 64px; padding: 8px; border-radius: 10px; border: 1px solid #ccc; }
+    button { padding: 10px 14px; border-radius: 12px; border: 0; background: #2ea6ff; color: white; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    .header { font-weight: 700; font-size: 18px; margin-bottom: 8px; }
+    .messages { max-width: 760px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="messages">
+      <div class="header">LLM WebApp (Cloudflare)</div>
+      <div id="log"></div>
+      <div class="row" style="margin-top:12px;">
+        <textarea id="input" placeholder="Напишите сообщение..."></textarea>
+        <button id="sendBtn">Отправить</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Lightweight Markdown renderer
+    function renderMarkdown(md) {
+      let html = md.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      html = html.replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");
+      html = html.replace(/\*(.+?)\*/g, "<em>$1</em>");
+      html = html.replace(/`([^`]+?)`/g, "<code>$1</code>");
+      html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+      html = html.replace(/^### (.+)$/gm, "<h3>$1</h3>");
+      html = html.replace(/^## (.+)$/gm, "<h2>$1</h2>");
+      html = html.replace(/^# (.+)$/gm, "<h1>$1</h1>");
+      html = html.replace(/\n/g, "<br/>");
+      return html;
+    }
+
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const logEl = document.getElementById('log');
+    const inputEl = document.getElementById('input');
+    const sendBtn = document.getElementById('sendBtn');
+
+    function addBubble(role, text) {
+      const div = document.createElement('div');
+      div.className = 'bubble ' + (role === 'user' ? 'user' : 'bot');
+      div.innerHTML = renderMarkdown(text);
+      logEl.appendChild(div);
+      window.scrollTo(0, document.body.scrollHeight);
+    }
+
+    async function loadHistory() {
+      try {
+        const initData = tg.initData || '';
+        const url = `/api/history?initData=${encodeURIComponent(initData)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.error) {
+          console.error('history error', data.error);
+          return;
+        }
+        logEl.innerHTML = '';
+        for (const m of data.messages) addBubble(m.role, m.content);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    loadHistory();
+
+    sendBtn.onclick = async () => {
+      const text = inputEl.value.trim();
+      if (!text) return;
+      addBubble('user', text);
+      inputEl.value = '';
+      sendBtn.disabled = true;
+      try {
+        tg.sendData(JSON.stringify({ type: 'user_message', text }));
+        setTimeout(loadHistory, 1500);
+        setTimeout(loadHistory, 3500);
+        setTimeout(loadHistory, 7000);
+      } catch (e) {
+        console.error(e);
+      } finally {
+        sendBtn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
